@@ -462,6 +462,7 @@ router.post('/', asyncHandler(async (req, res, next) => {
 // ...
 ```
 
+
 # Add User Logout Route
 Create a DELETE /api/session logout route to remove the token cookie from the response and return a JSON success message:
 ```JS
@@ -475,5 +476,40 @@ router.delete('/', (_req, res) => {
   }
 );
 
+// ...
+```
+
+
+# Add User Signup API Route
+In the backend/routes/api/users.js file, import the following at the top of the file and create an Express router:
+```JS
+const express = require('express');
+const asyncHandler = require('express-async-handler');
+
+const { setTokenCookie, requireAuth } = require('../../utils/auth');
+const { User } = require('../../db/models');
+
+const router = express.Router();
+```
+
+Next, add the POST /api/users route to the router adding an asynchronous route handler:
+```JS
+// backend/routes/api/users.js
+// ...
+
+// Sign up
+router.post(
+  '',
+  asyncHandler(async (req, res) => {
+    const { email, password, username } = req.body;
+    const user = await User.signup({ email, username, password });
+
+    await setTokenCookie(res, user);
+
+    return res.json({
+      user,
+    });
+  }),
+);
 // ...
 ```
