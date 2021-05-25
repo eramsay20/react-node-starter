@@ -461,3 +461,19 @@ router.post('/', asyncHandler(async (req, res, next) => {
 );
 // ...
 ```
+
+# Add User Logout Route
+Create a DELETE /api/session logout route to remove the token cookie from the response and return a JSON success message:
+```JS
+// backend/routes/api/session.js
+// ...
+
+// Log out
+router.delete('/', (_req, res) => {
+    res.clearCookie('token');
+    return res.json({ message: 'success' });
+  }
+);
+
+// ...
+```
