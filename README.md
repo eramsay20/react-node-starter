@@ -266,7 +266,7 @@ Navigate to the test route at http://localhost:5000/hello/world. There, you shou
 If you don't see this, then check your backend server logs in your terminal where you ran npm start. Then check your routes.
 
 
-# Add API Routes
+# Add & Test API Routers
 Get started by nesting an api folder in your routes folder. Add an index.js file in the api folder with the following contents:
 ```JS
 // backend/routes/api/index.js
@@ -284,3 +284,55 @@ const apiRouter = require('./api');
 router.use('/api', apiRouter);
 // ...
 ```
+
+Make sure to test this set up by creating the following test route in the api router:
+```JS
+// backend/routes/api/index.js
+// ...
+
+router.post('/test', function(req, res) {
+  res.json({ requestBody: req.body });
+});
+
+// ...
+```
+
+# Add Error Handling 
+After connecting the routes to app.js, add the following error handling middleware functions
+
+```JS
+// Catch unhandled requests that don't match any routes defined and pass to error handler.
+app.use((_req, _res, next) => {
+    const err = new Error("The requested resource couldn't be found.");
+    err.title = "Resource Not Found";
+    err.errors = ["The requested resource couldn't be found."];
+    err.status = 404;
+    next(err);
+});
+
+// Catches Sequelize errors and formats them to look pretty before sending the error response
+app.use((err, _req, _res, next) => {
+    // check if error is a Sequelize error:
+    if (err instanceof ValidationError) {
+        err.errors = err.errors.map((e) => e.message);
+        err.title = 'Validation error';
+    }
+    next(err);
+});
+
+// formats all the errors before returning a JSON response
+app.use((err, _req, res, _next) => {
+    res.status(err.status || 500);
+    console.error(err);
+    res.json({
+        title: err.title || 'Server Error',
+        message: err.message,
+        errors: err.errors,
+        stack: isProduction ? null : err.stack,
+    });
+});
+```
+
+You can't really test the Sequelize error handler now because you have no Sequelize models to test it with, but you can test the Resource Not Found error handler and the Error Formatter error handler.
+
+To do this, try to access a route that hasn't been defined in your routes folder yet, like http://localhost:5000/not-found
