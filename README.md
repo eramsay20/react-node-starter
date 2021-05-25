@@ -265,3 +265,22 @@ Navigate to the test route at http://localhost:5000/hello/world. There, you shou
 
 If you don't see this, then check your backend server logs in your terminal where you ran npm start. Then check your routes.
 
+
+# Add API Routes
+Get started by nesting an api folder in your routes folder. Add an index.js file in the api folder with the following contents:
+```JS
+// backend/routes/api/index.js
+const router = require('express').Router();
+
+module.exports = router;
+```
+
+Import this file into the routes/index.js file and connect it to the router there:
+```JS
+// backend/routes/index.js
+// ...
+const apiRouter = require('./api');
+
+router.use('/api', apiRouter);
+// ...
+```
