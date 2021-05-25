@@ -336,3 +336,65 @@ app.use((err, _req, res, _next) => {
 You can't really test the Sequelize error handler now because you have no Sequelize models to test it with, but you can test the Resource Not Found error handler and the Error Formatter error handler.
 
 To do this, try to access a route that hasn't been defined in your routes folder yet, like http://localhost:5000/not-found
+
+
+# Add User Authentication
+
+Create a basic Users table based off the following schema:
+<table><thead><tr><th style="text-align: left;">column name</th><th style="text-align: center;">data type</th><th style="text-align: left;">constraints</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">id</code></td><td style="text-align: center;">integer</td><td style="text-align: left;">not null, primary key</td></tr><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">username</code></td><td style="text-align: center;">string</td><td style="text-align: left;">not null, indexed, unique, max 30 characters</td></tr><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">email</code></td><td style="text-align: center;">string</td><td style="text-align: left;">not null, indexed, unique, max 256 characters</td></tr><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">hashedPassword</code></td><td style="text-align: center;">binary string</td><td style="text-align: left;">not null</td></tr><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">createdAt</code></td><td style="text-align: center;">datetime</td><td style="text-align: left;">not null, default value of now()</td></tr><tr><td style="text-align: left;"><code class="sc-cMljjf gHCMgC">updatedAt</code></td><td style="text-align: center;">datetime</td><td style="text-align: left;">not null, default value of now()</td></tr></tbody></table>
+
+First generate a migrate and model file with the following command while cd'd into the backend folder: 
+```npx sequelize model:generate --name User --attributes 'username:STRING, email:STRING,hashedPassword:STRING```
+
+This will create a file in your backend/db/migrations folder and a file called user.js in your backend/db/models folder. In the migration file, apply the constraints from the above schema. 
+
+Next, migrate the Users table by running the following command:
+```npx dotenv sequelize db:migrate```
+
+If you encounter errors and need to undo the migrations, run:
+```npx dotenv sequelize db:migrate:undo```
+
+# Add Model Level Constraints ( OPTIONAL )
+DOCS: https://sequelize.org/master/manual/validations-and-constraints.html
+See 'backend > models > user.js' for sample code on how to add model level constraints
+
+
+# Add User Seed Data
+Generate a users seeder file for the demo user with the following command:
+```npx sequelize seed:generate --name demo-user```
+
+In the seeder file, create a demo user with an email, username, and hashedPassword fields. For the down function, delete the user with the username or email of the demo user.
+
+After you finish creating your demo user seed file, migrate the seed file by running the following command:
+```npx dotenv sequelize db:seed:all```
+
+If there is no error in seeding but you want to change the seed file, remember to undo the seed first, change the file, then seed again.
+```npx dotenv sequelize db:seed:undo:all```
+
+# Add Model Scopes to Limit Frontend Access of User Info ( OPTIONAL )
+To ensure that a user's information like their hashedPassword doesn't get sent to the frontend, you should define User model scopes.
+
+DOCS: https://sequelize.org/master/manual/scopes.html
+See 'backend > models > user.js' for sample code on how to add scope constraints
+
+
+# Add User Methods
+- toSafeObject: return jwt safe user obj excluding sensitive user info
+- validatePassword: check hashedPW to validate sign in
+- getCurrentUserById: get frontend safe user obj after sign in
+- login: log in a user
+- signup: create a new user
+
+See 'backend > models > user.js' for sample code adding user methods to the model
+
+
+# Add User Auth Middlewares
+Create a folder called utils in your backend folder. Add a file named auth.js to store the auth helper functions.
+```JS
+// backend/utils/auth.js
+const jwt = require('jsonwebtoken');
+const { jwtConfig } = require('../config');
+const { User } = require('../db/models');
+
+const { secret, expiresIn } = jwtConfig;
+```
