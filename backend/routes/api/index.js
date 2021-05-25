@@ -1,5 +1,17 @@
 const router = require('express').Router(); // create a router instance
 
+// import API routes
+const sessionRouter = require('./session.js');
+const usersRouter = require('./users.js');
+
+// add routing middleware
+router.use('/session', sessionRouter);
+router.use('/users', usersRouter);
+
+
+
+
+// setup test route
 router.post('/test', (req, res) => {
     res.json({ requestBody: req.body })
 })
@@ -18,5 +30,6 @@ fetch('/api/test', {
 }).then(res => res.json()).then(data => console.log(data));
 ```
 */
+
 
 module.exports = router; // export router

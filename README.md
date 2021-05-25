@@ -398,3 +398,66 @@ const { User } = require('../db/models');
 
 const { secret, expiresIn } = jwtConfig;
 ```
+
+Next add middleware auth functions for ...
+- setTokenCookie: sets the JWT cookie after a user is logged in / signed up
+- restoreUser: restore the session user based on the contents of the JWT cookie 
+- requireUser: requiring a session user to be authenticated before accessing a route
+
+Lastly, export these functions from auth.js for use elsewhere. See 'backend > utils > auth.js' for full middleware function code and notes. 
+
+
+# Setup User Auth Route Structure
+Create a file called session.js in the routes > api folder. Create and export an Express router from this file.
+
+Next, create a file called users.js in the routes > api folder. Create and export an Express router from this file.
+
+Connect all the routes exported from these two files in the index.js file nested in the backend/routes/api folder:
+```JS
+// backend/routes/api/index.js
+const router = require('express').Router();
+const sessionRouter = require('./session.js');
+const usersRouter = require('./users.js');
+
+router.use('/session', sessionRouter);
+router.use('/users', usersRouter);
+
+module.exports = router;
+```
+
+# Add User Login API Route
+In the API > session.js file, import the following: 
+```JS
+const express = require('express');
+const asyncHandler = require('express-async-handler');
+
+const { setTokenCookie, restoreUser } = require('../../utils/auth');
+const { User } = require('../../db/models');
+
+const router = express.Router();
+```
+
+Next, add the POST /api/session route to the router:
+```JS
+// Log in
+// ...
+router.post('/', asyncHandler(async (req, res, next) => {
+        const { credential, password } = req.body; // get info from req
+        const user = await User.login({ credential, password }); // validate
+
+        if (!user) {
+            const err = new Error('Login failed');
+            err.status = 401;
+            err.title = 'Login failed';
+            err.errors = ['The provided credentials were invalid.'];
+            return next(err);
+        }
+
+        await setTokenCookie(res, user); // if valid, set current user token
+        return res.json({ // return the user
+            user,
+        });
+    }),
+);
+// ...
+```
