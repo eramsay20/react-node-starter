@@ -6,6 +6,15 @@ const { User } = require('../../db/models'); // get User table
 
 const router = express.Router();
 
+// Restore session user
+router.get('/', restoreUser, (req, res) => {
+        const { user } = req;
+        if (user) {
+            return res.json({ user: user.toSafeObject() }); // if user, return safe user obj
+        } else return res.json({}); // else return empty obj
+    }
+);
+
 // Log in
 router.post('/', asyncHandler(async (req, res, next) => {
         const { credential, password } = req.body; // get info from req
@@ -26,9 +35,9 @@ router.post('/', asyncHandler(async (req, res, next) => {
 
 // Log out
 router.delete('/', (_req, res) => {
-    res.clearCookie('token');
-    return res.json({ message: 'success' });
-}
+        res.clearCookie('token');
+        return res.json({ message: 'success' });
+    }
 );
 
 module.exports = router;

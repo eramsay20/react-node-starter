@@ -505,11 +505,24 @@ router.post(
     const user = await User.signup({ email, username, password });
 
     await setTokenCookie(res, user);
-
-    return res.json({
-      user,
-    });
+    return res.json({ user });
   }),
+);
+// ...
+```
+
+# Add the Get Session User API Route
+Add a get route to restore and return a user login for user-auth routes:
+```JS
+// backend/routes/api/session.js
+// ...
+// Restore session user
+router.get('/', restoreUser, (req, res) => {
+    const { user } = req;
+    if (user) {
+      return res.json({ user: user.toSafeObject() }); // if user, return safe user obj
+    } else return res.json({}); // else return empty obj
+  }
 );
 // ...
 ```
