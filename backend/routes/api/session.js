@@ -1,10 +1,24 @@
 const express = require('express')
 const asyncHandler = require('express-async-handler'); // used to wrap routes with custom mws
 
+const { check } = require('express-validator'); // used to validate req body
+const { handleValidationErrors } = require('../../utils/validation'); // used to validate req body
 const { setTokenCookie, restoreUser } = require('../../utils/auth'); // get user auth functions
 const { User } = require('../../db/models'); // get User table
 
 const router = express.Router();
+
+// validates credential inputs before handling possible errors
+const validateLogin = [
+    check('credential')
+        .exists({ checkFalsy: true })
+        .notEmpty()
+        .withMessage('Please provide a valid email or username.'),
+    check('password')
+        .exists({ checkFalsy: true })
+        .withMessage('Please provide a password.'),
+    handleValidationErrors,
+];
 
 // Restore session user
 router.get('/', restoreUser, (req, res) => {
@@ -16,7 +30,7 @@ router.get('/', restoreUser, (req, res) => {
 );
 
 // Log in
-router.post('/', asyncHandler(async (req, res, next) => {
+router.post('/', validateLogin, asyncHandler(async (req, res, next) => {
         const { credential, password } = req.body; // get info from req
         const user = await User.login({ credential, password }); // validate
 
