@@ -6,12 +6,16 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import configureStore from './store';
+import { restoreCSRF, csrfFetch } from './store/csrf';
 import reportWebVitals from './reportWebVitals';
+
 
 const store = configureStore();
 
 if(process.env.NODE_ENV !== 'production') { // do not expose store in prod
-  window.store = store
+  restoreCSRF();
+  window.csrfFetch = csrfFetch;
+  window.store = store;
 }
 
 const Root = () => {

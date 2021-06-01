@@ -151,7 +151,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 ```
 
-Next, define a Root React functional component that returns the App component wrapped in Redux's Provider and React Router DOM's BrowserRouter provider components.
+Next, define a Root React functional component that returns the App component wrapped in Redux's Provider and React Router DOM's BrowserRouter provider components. Make sure to pass in the key of store with the value of store to the Provider. Pass Root to reactDOM.render instead of App. 
 
 ```JS
 // frontend/src/index.js
@@ -166,3 +166,105 @@ function Root() {
   );
 }
 ```
+
+## Wrapping fetch requests with CSRF
+First, you need to add a "proxy" in your frontend/package.json. Add a "proxy" key with the value of http://localhost:5000 or wherever you are serving your backend Express application.
+``` "proxy": "http://localhost:5000" ```
+
+Next, to make fetch requests with any HTTP verb other than GET, you need to set a XSRF-TOKEN header on the request and the value of the header should be set to the value of the XSRF-TOKEN cookie. Wrap the fetch function on the window that will be used in place of the default fetch function.
+
+Add a csrf.js file in the frontend/src/store folder. Import Cookies from js-cookie that will be used to extract the XSRF-TOKEN cookie value. Define an async function called csrfFetch that will take in url parameter and an options parameter that defaults to an empty object. If options.headers is not set, default it to an empty object. If options.method is not set, set it to the GET method. If it is any method other than a GET method, set the XSRF-TOKEN header on the options object to the extracted value of the XSRF-TOKEN cookie. Call and await the window.fetch with the url and the options object to get the response. Export the custom csrfFetch function from this file.
+
+``` JS
+// frontend/src/store/csrf.js
+import Cookies from 'js-cookie';
+
+export async function csrfFetch(url, options = {}) {
+  // set options.method to 'GET' if there is no method
+  options.method = options.method || 'GET';
+  // set options.headers to an empty object if there is no headers
+  options.headers = options.headers || {};
+
+  // if the options.method is not 'GET', then set the "Content-Type" header to
+    // "application/json", and set the "XSRF-TOKEN" header to the value of the 
+    // "XSRF-TOKEN" cookie
+  if (options.method.toUpperCase() !== 'GET') {
+    options.headers['Content-Type'] =
+      options.headers['Content-Type'] || 'application/json';
+    options.headers['XSRF-Token'] = Cookies.get('XSRF-TOKEN');
+  }
+  // call the default window's fetch with the url and the options passed in
+  const res = await window.fetch(url, options);
+
+  // if the response status code is 400 or above, then throw an error with the
+    // error being the response
+  if (res.status >= 400) throw res;
+
+  // if the response status code is under 400, then return the response to the
+    // next promise chain
+  return res;
+}
+```
+
+In production, the XSRF-TOKEN will be attached to the index.html file in the frontend/build folder. In the backend/routes/index.js file, serve the index.html file at the / route and any routes that don't start with /api. Along with it, attach the XSRF-TOKEN cookie to the response. Serve the static files in the frontend/build folder using the express.static middleware.
+
+```JS
+// backend/routes/index.js
+// ... after `router.use('/api', apiRouter);`
+
+// Static routes
+// Serve React build files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  // Serve the frontend's index.html file at the root route
+  router.get('/', (req, res) => {
+    res.cookie('XSRF-TOKEN', req.csrfToken());
+    return res.sendFile(
+      path.resolve(__dirname, '../../frontend', 'build', 'index.html')
+    );
+  });
+
+  // Serve the static assets in the frontend's build folder
+  router.use(express.static(path.resolve("../frontend/build")));
+
+  // Serve the frontend's index.html file at all other routes NOT starting with /api
+  router.get(/^(?!\/?api).*/, (req, res) => {
+    res.cookie('XSRF-TOKEN', req.csrfToken());
+    return res.sendFile(
+      path.resolve(__dirname, '../../frontend', 'build', 'index.html')
+    );
+  });
+}
+
+```
+
+In development, you need another way to get the XSRF-TOKEN cookie on your frontend application because the React frontend is on a different server than the Express backend. To solve this, add a backend route, GET /api/csrf/restore in the same file that can be accessed only in development and will restore the XSRF-TOKEN cookie.
+
+``` JS
+// backend/routes/index.js
+// ...
+
+// Add a XSRF-TOKEN cookie in development
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/api/csrf/restore', (req, res) => {
+    res.cookie('XSRF-TOKEN', req.csrfToken());
+    return res.json({});
+  });
+}
+
+// ...
+```
+
+Back in the React frontend, this GET /api/csrf/restore route needs to be called when the application is loaded. Define and export a function called restoreCSRF in the frontend/src/store/csrf.js that will call the custom csrfFetch function with /api/csrf/restore as the url parameter.
+
+```JS
+// frontend/src/store/csrf.js
+// ...
+
+// call this to get the "XSRF-TOKEN" cookie, should only be used in development
+export function restoreCSRF() {
+  return csrfFetch('/api/csrf/restore');
+}
+```
+
+In the frontend entry file (frontend/src/index.js), call the restoreCSRF function when in development before defining the Root functional component. Also, attach the custom csrfFetch function onto the window when in development as window.csrfFetch.
