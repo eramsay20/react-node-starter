@@ -1,0 +1,25 @@
+.main-page-container {
+    display: grid;
+    grid-template-columns: 1fr 5fr 1fr;
+    grid-template-rows: 1fr 2fr;
+    grid-template-areas: 
+        " . banner . "
+        " . content . ";
+    height: 90vh;
+}
+
+.banner {
+    grid-area: banner;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: lightgray;
+}
+
+.content {
+    grid-area: content;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: lightblue;
+}

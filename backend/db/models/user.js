@@ -1,5 +1,6 @@
 'use strict';
 const bcrypt = require('bcryptjs'); // import bcrypt for pass hashing
+const { Validator } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {

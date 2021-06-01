@@ -268,3 +268,8 @@ export function restoreCSRF() {
 ```
 
 In the frontend entry file (frontend/src/index.js), call the restoreCSRF function when in development before defining the Root functional component. Also, attach the custom csrfFetch function onto the window when in development as window.csrfFetch.
+
+Test, commit and complete!
+
+
+## Login Page Setup

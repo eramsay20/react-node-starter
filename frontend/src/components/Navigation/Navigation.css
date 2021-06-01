@@ -1,0 +1,21 @@
+.nav-bar-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: 
+        " . home middle links . ";
+    height: 10vh;
+    text-align: center;
+    align-items: center;
+}
+
+.nav-bar-session-links {
+    grid-area: links;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: black;
+    margin: 10px;
+    padding: 5px;
+}
