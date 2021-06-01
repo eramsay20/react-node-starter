@@ -530,3 +530,6 @@ router.get('/', restoreUser, (req, res) => {
 
 # Add Request Body Validation ( OPTIONAL )
 See Utils > validation.js for sample implementation of request body validation MW
+
+
+# MOVE TO FRONTEND SETUP! (see readme in 'frontend' folder)
